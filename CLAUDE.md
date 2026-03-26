@@ -8,7 +8,7 @@ creates a task in Nextcloud Tasks (CalDAV) or a card in Nextcloud Deck
 ## Stack
 - FastAPI + Uvicorn
 - Pydantic v2 + pydantic-settings
-- anthropic SDK (structured JSON output via client.messages.create)
+- anthropic SDK (structured JSON output via **client.messages.parse()**)
 - caldav-tasks-api (CalDAV Tasks)
 - httpx (Deck REST API)
 - tenacity (LLM retries)
@@ -24,8 +24,16 @@ creates a task in Nextcloud Tasks (CalDAV) or a card in Nextcloud Deck
 - `middleware/models.py` — TaskOutput, TaskRequest, TaskResponse
 - `middleware/config.py` — pydantic-settings from .env
 
+## LLM call
+Use `client.messages.parse()` (not `client.messages.create`) in `middleware/llm.py`
+to benefit from native Anthropic Pydantic validation on the structured output.
+
 ## Routing keyword rules
-See `middleware/prompt.py` — ROUTING_RULES constant.
+Source of truth: `TASK_ROUTING.md` in the Productivity repo.
+The `ROUTING_RULES` constant in `middleware/prompt.py` must stay in sync with it.
+
+Active Deck board: **Aboriginal Way** (only).
+SNALE is NOT a Deck board — SNALE-related tasks go to Nextcloud Tasks (CalDAV).
 
 ## Deck API notes
 - Board/stack IDs are cached (TTLCache, 1h). Cache is invalidated on 404.
@@ -42,3 +50,4 @@ uvicorn middleware.main:app --reload
 ## Git workflow
 Feature branch → `feature/middleware-nlp` → `actualisation` → `main`
 Conventional commits in English.
+No Co-Authored-By trailer in commit messages.
