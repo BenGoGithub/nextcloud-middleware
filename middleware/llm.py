@@ -25,7 +25,7 @@ async def call_llm(text: str) -> TaskOutput:
         max_tokens=1024,
         system=system_prompt,
         messages=[{"role": "user", "content": text}],
-        response_format=TaskOutput,
+        output_format=TaskOutput,
     )
 
-    return message.parsed
+    return message.parsed_output
