@@ -23,13 +23,5 @@ jobs:
             git pull origin main
             source .venv/bin/activate
             pip install -r requirements.txt --quiet
-            systemctl restart nextcloud-middleware
-            sleep 3
-            if ! systemctl is-active --quiet nextcloud-middleware; then
-              git checkout HEAD~1
-              source .venv/bin/activate
-              systemctl restart nextcloud-middleware
-              echo "ROLLBACK executed"
-              exit 1
-            fi
+            sudo /usr/local/sbin/restart-nextcloud-middleware
             echo "Deploy successful"
