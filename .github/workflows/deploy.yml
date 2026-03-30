@@ -24,4 +24,12 @@ jobs:
             source .venv/bin/activate
             pip install -r requirements.txt --quiet
             sudo /usr/local/sbin/restart-nextcloud-middleware
+            sleep 3
+            if ! sudo /usr/local/sbin/restart-nextcloud-middleware; then
+              git checkout HEAD~1
+              source .venv/bin/activate
+              sudo /usr/local/sbin/restart-nextcloud-middleware
+              echo "ROLLBACK executed"
+              exit 1
+            fi
             echo "Deploy successful"
