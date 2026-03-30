@@ -56,7 +56,10 @@ async def create_task(output: TaskOutput) -> None:
     logger.info("CalDAV task created: list=%s title=%r", output.nextcloud_list, output.title)
 
     if output.needs_calendar_event and output.due_date:
-        _create_vevent(output)
+        try:
+            _create_vevent(output)
+        except Exception as exc:
+            logger.warning("VEVENT creation skipped: %s", exc)
 
 
 def _create_vevent(output: TaskOutput) -> None:
