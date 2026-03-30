@@ -1,6 +1,6 @@
 # CLAUDE.md — {{NOM DU PROJET}}
 
-<!-- template-version: v1.1 -->
+<!-- template-version: v1.2 -->
 
 Fichier de référence lu à chaque session. Contient les préférences du projet et l'index de la documentation.
 
@@ -83,6 +83,32 @@ chore: update dependencies
 
 ---
 
+## Instances Claude — gouvernance
+
+Ce projet est servi par les instances Claude suivantes.
+
+| Instance | Contexte | Périmètre |
+|---|---|---|
+| **Claude.ai** | Navigateur (claude.ai) | Architecture, docs, décisions structurelles |
+| **Claude Code — JetBrains** | Poste local {{NOM_POSTE}} | Génération code, commits locaux, ouverture PR |
+| **Claude Code — VPS** | {{USER}}@{{HOST}} — si applicable | Fixes runtime, commits sur dev/claude/* |
+
+### Règles non négociables
+
+- Claude Code (JetBrains ou VPS) peut ouvrir une PR vers `main` — jamais la merger.
+- Toute opération système (apt, systemd, nginx) → root SSH uniquement, hors périmètre Claude Code.
+
+### Vérifications début de session (Claude Code VPS) — si applicable
+```bash
+git branch --show-current          # doit être dev ou claude/* — jamais main
+git config --local user.name       # {{USER_GIT}}
+echo ${ANTHROPIC_API_KEY:-absent}  # doit retourner "absent"
+```
+
+> Supprimer le bloc VPS si le repo ne tourne pas sur un VPS.
+
+---
+
 ## Workflow Git
 
 - **Ne jamais produire de code sans accord préalable.** Proposer une stratégie, attendre la validation, puis implémenter.
@@ -160,5 +186,6 @@ chore/{{description}}      # maintenance (dépendances, config)
 
 | Version | Description |
 |---------|-------------|
+| v1.2 | Ajout section gouvernance instances Claude |
 | v1.1 | Ajout versionning sémantique (template-version + changelog) |
 | v1.0 | Version initiale |

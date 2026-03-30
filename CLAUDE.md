@@ -51,6 +51,32 @@ Toute suggestion de code contenant des secrets = ERREUR CRITIQUE IMMÉDIATE.
 
 ---
 
+## Instances Claude — gouvernance
+
+Ce projet est servi par trois instances Claude aux rôles distincts.
+
+| Instance | Contexte | Périmètre |
+|---|---|---|
+| **Claude.ai** | Navigateur (claude.ai) | Architecture, docs, décisions structurelles |
+| **Claude Code — JetBrains** | Poste local Ben-Wedo | Génération code, commits locaux, ouverture PR |
+| **Claude Code — VPS** | claude-ops@168.222.244.80 | Fixes runtime, commits sur dev/claude/*, ouverture PR vers main |
+
+### Règles non négociables
+
+- Claude Code (JetBrains ou VPS) peut ouvrir une PR vers `main` — jamais la merger.
+- Claude Code VPS travaille sur `dev` ou `claude/*`. Il peut ouvrir une PR vers `main`.
+- Toute opération système (apt, systemd, nginx) → root SSH uniquement, hors périmètre Claude Code.
+
+### Vérifications début de session (Claude Code VPS)
+```bash
+git branch --show-current          # doit être dev ou claude/* — jamais main
+git config --local user.name       # claude-ops
+echo ${ANTHROPIC_API_KEY:-absent}  # doit retourner "absent"
+systemctl status nextcloud-middleware
+```
+
+---
+
 ## Workflow Git
 
 - **Branches de code** : tout fichier de code transite par une feature branch.
@@ -155,5 +181,6 @@ uvicorn middleware.main:app --reload
 
 | Version | Description |
 |---------|-------------|
+| v1.2 | Ajout section gouvernance instances Claude |
 | v1.1 | Alignement template v1.1 — ajout sécurité, préférences, workflows, table docs |
 | v1.0 | Version initiale (technique uniquement) |
