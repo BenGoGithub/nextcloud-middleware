@@ -40,3 +40,5 @@ middleware/
     ├── tasks.py     # CalDAV task creation
     └── deck.py      # Deck card creation
 ```
+
+<!-- Phase 6 validation - 2026-03-30 -->
