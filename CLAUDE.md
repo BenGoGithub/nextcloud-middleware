@@ -120,7 +120,7 @@ chore/{{description}}      # maintenance (dépendances, config)
 - **Stack** : Python 3.12, FastAPI + Uvicorn, Pydantic v2, anthropic SDK, caldav-tasks-api, httpx, tenacity, cachetools
 - **Repo** : BenGoGithub/nextcloud-middleware
 - **Branche principale** : main
-- **Déploiement** : VPS — `uvicorn middleware.main:app` (port 8000)
+- **Déploiement** : https://middleware.aboriginalway.fr (VPS Scaleway Berlin, systemd + Nginx + HTTPS)
 
 ### Structure clé
 
