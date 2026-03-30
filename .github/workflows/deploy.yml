@@ -1,0 +1,35 @@
+name: Deploy to production
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  deploy:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/repos/nextcloud-middleware
+            git pull origin main
+            source .venv/bin/activate
+            pip install -r requirements.txt --quiet
+            systemctl restart nextcloud-middleware
+            sleep 3
+            if ! systemctl is-active --quiet nextcloud-middleware; then
+              git checkout HEAD~1
+              source .venv/bin/activate
+              systemctl restart nextcloud-middleware
+              echo "ROLLBACK executed"
+              exit 1
+            fi
+            echo "Deploy successful"
