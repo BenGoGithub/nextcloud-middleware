@@ -1,3 +1,4 @@
+INTENTIONAL_BUG_FOR_ROLLBACK_TEST
 from __future__ import annotations
 
 import logging
