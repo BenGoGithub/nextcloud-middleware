@@ -55,21 +55,25 @@ Toute suggestion de code contenant des secrets = ERREUR CRITIQUE IMMÉDIATE.
 
 Ce projet est servi par trois instances Claude aux rôles distincts.
 
-| Instance | Contexte | Périmètre |
-|---|---|---|
-| **Claude.ai** | Navigateur (claude.ai) | Architecture, docs, décisions structurelles |
-| **Claude Code — JetBrains** | Poste local Ben-Wedo | Génération code, commits locaux, ouverture PR |
-| **Claude Code — VPS** | claude-ops@168.222.244.80 | Fixes runtime, commits sur dev/claude/*, ouverture PR vers main |
+| Instance | Contexte | Branche de travail | Périmètre |
+|---|---|---|---|
+| **Claude.ai** | Navigateur (claude.ai) | — | Architecture, docs, décisions structurelles |
+| **Claude Code — JetBrains** | Poste local Ben-Wedo | `feat/*`, `fix/*` | Génération code, commits locaux, ouverture PR |
+| **Claude Code — VPS** | claude-ops@168.222.244.80 | `claude/*` | Fixes runtime, doc, ouverture PR vers main |
 
 ### Règles non négociables
 
 - Claude Code (JetBrains ou VPS) peut ouvrir une PR vers `main` — jamais la merger.
-- Claude Code VPS travaille sur `dev` ou `claude/*`. Il peut ouvrir une PR vers `main`.
+- Claude Code VPS travaille exclusivement sur des branches `claude/*`.
+- Doc et code ne sont jamais mixés dans la même PR ni le même commit.
+- Ben relit le diff et merge toutes les PR.
+- Ben supprime les branches mergées (localement et sur origin). Claude Code ne supprime jamais de branches.
 - Toute opération système (apt, systemd, nginx) → root SSH uniquement, hors périmètre Claude Code.
 
 ### Vérifications début de session (Claude Code VPS)
 ```bash
-git branch --show-current          # doit être dev ou claude/* — jamais main
+git branch --show-current          # doit être claude/* — jamais main
+                                   # si sur main : git checkout -b claude/{{description}} avant toute modification
 git config --local user.name       # claude-ops
 echo ${ANTHROPIC_API_KEY:-absent}  # doit retourner "absent"
 systemctl status nextcloud-middleware
@@ -79,11 +83,20 @@ systemctl status nextcloud-middleware
 
 ## Workflow Git
 
-- **Branches de code** : tout fichier de code transite par une feature branch.
-- **Documentation** : peut être commitée directement sur `actualisation`.
-- **Une branche par feature/tâche.**
-- Flux : `feature/...` → `actualisation` → `main`
-- **Ne jamais supprimer les branches citées dans ce workflow** : `main`, `actualisation`. Ces branches sont structurelles et doivent rester intactes même si elles apparaissent comme mergées.
+- **Une branche par PR, une PR par sujet.**
+- **Ne jamais supprimer les branches structurelles** : `main`. Intacte en toutes circonstances.
+- **Doc et code séparés** : jamais dans la même PR ni le même commit.
+
+### Flux par instance
+
+```
+Claude Code JetBrains
+feat/* | fix/* | refactor/* | chore/*  →  main  (PR, merge par Ben)
+
+Claude Code VPS
+claude/doc-{{description}}  →  main  (PR doc uniquement)
+claude/{{description}}      →  main  (PR code uniquement)
+```
 
 ### Conventions de nommage des branches
 
@@ -93,15 +106,15 @@ fix/{{description}}        # correction de bug
 docs/{{description}}       # documentation uniquement
 refactor/{{description}}   # refactorisation sans changement fonctionnel
 chore/{{description}}      # maintenance (dépendances, config)
+claude/doc-{{description}} # PR doc VPS Claude Code
+claude/{{description}}     # PR code VPS Claude Code
 ```
 
-### Branches actives
+### Branches structurelles
 
-| Branche | Rôle | État |
-|---------|------|------|
-| `main` | Production | stable |
-| `actualisation` | Staging / docs | actif |
-| `feature/middleware-nlp` | Feature NLP initiale | en cours |
+| Branche | Rôle | Propriétaire | État |
+|---------|------|--------------|------|
+| `main` | Production | Ben | stable — ne jamais supprimer |
 
 ---
 
@@ -182,6 +195,7 @@ uvicorn middleware.main:app --reload
 
 | Version | Description |
 |---------|-------------|
+| v1.3 | Gouvernance : branche de travail par instance, flux PR doc/code séparés, règle nettoyage branches |
 | v1.2 | Ajout section gouvernance instances Claude |
 | v1.1 | Alignement template v1.1 — ajout sécurité, préférences, workflows, table docs |
 | v1.0 | Version initiale (technique uniquement) |
