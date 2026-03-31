@@ -16,6 +16,18 @@ class TaskOutput(BaseModel):
     deck_board: Optional[str] = None      # e.g. "Aboriginal Way"
     deck_stack: Optional[str] = None      # e.g. "Backlog"
     needs_calendar_event: bool = False
+    confidence: float = 1.0
+    notes: Optional[str] = None
+
+
+class EventOutput(BaseModel):
+    title: str
+    description: Optional[str] = None
+    start: datetime                        # DTSTART — required
+    end: Optional[datetime] = None        # DTEND — defaults to start + 1h if absent
+    location: Optional[str] = None
+    timezone: str = "Europe/Paris"
+    confidence: float = 1.0
     notes: Optional[str] = None
 
 
@@ -31,3 +43,12 @@ class TaskResponse(BaseModel):
     deck_stack: Optional[str] = None
     title: str
     due_date: Optional[str] = None
+
+
+class EventResponse(BaseModel):
+    status: str
+    title: str
+    start: str
+    end: Optional[str] = None
+    location: Optional[str] = None
+    confidence: float

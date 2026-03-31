@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+import uuid
+from datetime import datetime, timedelta, timezone
 
 import caldav  # type: ignore[import]
 from caldav_tasks_api import TaskData, TasksAPI  # type: ignore[import]
 
 from middleware.config import settings
 from middleware.models import TaskOutput
+
+_VEVENT_TZ = "Europe/Paris"
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +66,7 @@ async def create_task(output: TaskOutput) -> None:
 
 
 def _create_vevent(output: TaskOutput) -> None:
-    """Create a VEVENT in the matching calendar using the raw caldav library."""
+    """Create a companion VEVENT in the matching calendar using the raw caldav library."""
     due: datetime = output.due_date  # type: ignore[assignment]
 
     client = caldav.DAVClient(
@@ -83,20 +86,30 @@ def _create_vevent(output: TaskOutput) -> None:
         logger.warning("VEVENT skipped: calendar '%s' not found", output.nextcloud_list)
         return
 
+    uid = str(uuid.uuid4())
+    dtstamp = datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     dtstart = due.strftime("%Y%m%dT%H%M%S")
-    description_line = (
-        f"DESCRIPTION:{output.description}\n" if output.description else ""
-    )
-    ical = (
-        "BEGIN:VCALENDAR\n"
-        "VERSION:2.0\n"
-        "BEGIN:VEVENT\n"
-        f"SUMMARY:{output.title}\n"
-        f"DTSTART:{dtstart}\n"
-        f"DTEND:{dtstart}\n"
-        f"{description_line}"
-        "END:VEVENT\n"
-        "END:VCALENDAR\n"
-    )
+    # Give a 1-hour duration when the time is set; all-day events keep same start/end date
+    if due.hour != 0 or due.minute != 0:
+        dtend = (due + timedelta(hours=1)).strftime("%Y%m%dT%H%M%S")
+    else:
+        dtend = dtstart
+
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//nextcloud-middleware//EN",
+        "BEGIN:VEVENT",
+        f"UID:{uid}",
+        f"DTSTAMP:{dtstamp}",
+        f"DTSTART;TZID={_VEVENT_TZ}:{dtstart}",
+        f"DTEND;TZID={_VEVENT_TZ}:{dtend}",
+        f"SUMMARY:{output.title}",
+    ]
+    if output.description:
+        lines.append(f"DESCRIPTION:{output.description}")
+    lines += ["END:VEVENT", "END:VCALENDAR"]
+    ical = "\r\n".join(lines) + "\r\n"
+
     target_cal.add_event(ical)
     logger.info("CalDAV VEVENT created: calendar=%s title=%r", output.nextcloud_list, output.title)
