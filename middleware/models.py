@@ -52,3 +52,9 @@ class EventResponse(BaseModel):
     end: Optional[str] = None
     location: Optional[str] = None
     confidence: float
+
+
+class ClarificationResponse(BaseModel):
+    status: Literal["clarification_needed"]
+    question: str
+    confidence: float

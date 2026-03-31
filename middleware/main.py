@@ -11,12 +11,14 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from middleware.adapters.events import create_event
 from middleware.config import settings
 from middleware.llm import call_llm, call_llm_event
-from middleware.models import EventResponse, TaskRequest, TaskResponse
+from middleware.models import ClarificationResponse, EventResponse, TaskRequest, TaskResponse
 from middleware.router import dispatch
 
 logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(title="Nextcloud Middleware", version="0.1.0")
+
+CONFIDENCE_THRESHOLD = 0.7
 
 
 @app.exception_handler(ValueError)
@@ -42,9 +44,17 @@ async def health() -> dict:
     return {"status": "ok"}
 
 
-@app.post("/task", response_model=TaskResponse, dependencies=[Depends(_verify_token)])
-async def create_task_endpoint(request: TaskRequest) -> TaskResponse:
+@app.post("/task", dependencies=[Depends(_verify_token)])
+async def create_task_endpoint(request: TaskRequest) -> TaskResponse | ClarificationResponse:
     output = await call_llm(request.text)
+
+    if output.confidence < CONFIDENCE_THRESHOLD:
+        return ClarificationResponse(
+            status="clarification_needed",
+            question=f"Je n'ai pas bien compris. Vouliez-vous créer une tâche intitulée « {output.title} » ?",
+            confidence=output.confidence,
+        )
+
     await dispatch(output)
 
     due_str = output.due_date.date().isoformat() if output.due_date else None
@@ -60,9 +70,17 @@ async def create_task_endpoint(request: TaskRequest) -> TaskResponse:
     )
 
 
-@app.post("/event", response_model=EventResponse, dependencies=[Depends(_verify_token)])
-async def create_event_endpoint(request: TaskRequest) -> EventResponse:
+@app.post("/event", dependencies=[Depends(_verify_token)])
+async def create_event_endpoint(request: TaskRequest) -> EventResponse | ClarificationResponse:
     output = await call_llm_event(request.text)
+
+    if output.confidence < CONFIDENCE_THRESHOLD:
+        return ClarificationResponse(
+            status="clarification_needed",
+            question=f"Je n'ai pas bien compris. Vouliez-vous créer un événement intitulé « {output.title} » ?",
+            confidence=output.confidence,
+        )
+
     await create_event(output)
 
     return EventResponse(
