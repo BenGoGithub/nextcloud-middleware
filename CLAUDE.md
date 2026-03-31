@@ -65,7 +65,7 @@ Ce projet est servi par trois instances Claude aux rôles distincts.
 
 - Claude Code (JetBrains ou VPS) peut ouvrir une PR vers `main` — jamais la merger.
 - Claude Code VPS travaille exclusivement sur des branches `claude/*`.
-- Doc et code ne sont jamais mixés dans la même PR ni le même commit.
+- Doc et code ne doivent jamais être dans le même commit. Ils peuvent coexister dans la même PR à condition que chaque commit soit atomique.
 - Ben relit le diff et merge toutes les PR.
 - Ben supprime les branches mergées (localement et sur origin). Claude Code ne supprime jamais de branches.
 - Toute opération système (apt, systemd, nginx) → root SSH uniquement, hors périmètre Claude Code.
@@ -85,7 +85,7 @@ systemctl status nextcloud-middleware
 
 - **Une branche par PR, une PR par sujet.**
 - **Ne jamais supprimer les branches structurelles** : `main`. Intacte en toutes circonstances.
-- **Doc et code séparés** : jamais dans la même PR ni le même commit.
+- **Doc et code séparés** : doc et code ne doivent jamais être dans le même commit. Ils peuvent coexister dans la même PR à condition que chaque commit soit atomique (un commit doc, un commit code).
 
 ### Flux par instance
 
