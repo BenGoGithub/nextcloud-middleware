@@ -83,7 +83,7 @@ systemctl status nextcloud-middleware
 - **Documentation** : peut être commitée directement sur `actualisation`.
 - **Une branche par feature/tâche.**
 - Flux : `feature/...` → `actualisation` → `main`
-- **Ne jamais supprimer les branches citées dans ce workflow** : `main`, `actualisation`. Ces branches sont structurelles et doivent rester intactes même si elles apparaissent comme mergées.
+- **Ne jamais supprimer les branches citées dans ce workflow** : `main`, `actualisation`, `dev`. Ces branches sont structurelles et doivent rester intactes même si elles apparaissent comme mergées.
 
 ### Conventions de nommage des branches
 
