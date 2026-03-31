@@ -2,6 +2,12 @@ from __future__ import annotations
 
 from datetime import date
 
+_CONFIDENCE_RULES = """
+- confidence: 1.0 if date/time is explicit and unambiguous.
+- confidence: 0.7-0.9 if date is relative but inferrable ("tomorrow", "vendredi").
+- confidence: < 0.7 if date or time is missing or highly ambiguous.
+"""
+
 
 TASK_LISTS = [
     "Productivity",
@@ -33,6 +39,32 @@ ROUTING_RULES = """
 - Use "task" for a one-off personal task or reminder.
 - Use "deck" for a feature, bug, story, or backlog item.
 - If ambiguous, pick "task" as default.
+"""
+
+
+def build_event_system_prompt() -> str:
+    today = date.today().isoformat()
+    return f"""You are a calendar scheduling assistant. Today is {today} (timezone: Europe/Paris).
+
+The user describes a calendar event in natural language (French or English).
+Extract the event information and return ONLY a JSON object matching this schema:
+{{
+  "title": string,
+  "description": string | null,
+  "start": "YYYY-MM-DDTHH:MM:SS",
+  "end": "YYYY-MM-DDTHH:MM:SS" | null,
+  "location": string | null,
+  "timezone": "Europe/Paris",
+  "confidence": float,
+  "notes": string | null
+}}
+
+Rules:
+- Resolve relative dates ("demain", "vendredi", "lundi prochain") using today's date ({today}).
+- If end time is not specified, set "end" to null (1 hour will be added automatically).
+- If start date/time cannot be determined, set confidence below 0.5.
+{_CONFIDENCE_RULES}
+- Return only valid JSON — no markdown fences, no extra text.
 """
 
 

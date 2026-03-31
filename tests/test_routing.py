@@ -96,18 +96,16 @@ class TestDispatch:
 class TestCallLLM:
     @pytest.mark.asyncio
     async def test_call_llm_task(self):
-        fake_json = (
-            '{"target_type":"task","title":"Préparer slides","nextcloud_list":"Alternance",'
-            '"description":null,"due_date":null,"priority":null,"deck_board":null,'
-            '"deck_stack":null,"needs_calendar_event":false,"notes":null}'
+        fake_output = TaskOutput(
+            target_type="task",
+            title="Préparer slides",
+            nextcloud_list="Alternance",
         )
-        fake_content = MagicMock()
-        fake_content.text = fake_json
         fake_message = MagicMock()
-        fake_message.content = [fake_content]
+        fake_message.parsed_output = fake_output
 
         with patch("middleware.llm._client") as mock_client:
-            mock_client.messages.create.return_value = fake_message
+            mock_client.messages.parse.return_value = fake_message
             from middleware.llm import call_llm
             result = await call_llm("prépare les slides pour la soutenance")
 
@@ -117,18 +115,17 @@ class TestCallLLM:
 
     @pytest.mark.asyncio
     async def test_call_llm_deck(self):
-        fake_json = (
-            '{"target_type":"deck","title":"Fix login bug","deck_board":"Aboriginal Way",'
-            '"deck_stack":"Backlog","description":null,"due_date":null,"priority":null,'
-            '"nextcloud_list":null,"needs_calendar_event":false,"notes":null}'
+        fake_output = TaskOutput(
+            target_type="deck",
+            title="Fix login bug",
+            deck_board="Aboriginal Way",
+            deck_stack="Backlog",
         )
-        fake_content = MagicMock()
-        fake_content.text = fake_json
         fake_message = MagicMock()
-        fake_message.content = [fake_content]
+        fake_message.parsed_output = fake_output
 
         with patch("middleware.llm._client") as mock_client:
-            mock_client.messages.create.return_value = fake_message
+            mock_client.messages.parse.return_value = fake_message
             from middleware.llm import call_llm
             result = await call_llm("fix the login bug on the site")
 
