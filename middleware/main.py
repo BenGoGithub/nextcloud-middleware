@@ -86,6 +86,8 @@ async def confirm_task_endpoint(request: ConfirmRequest) -> TaskResponse:
     stored = pending_store.pop(request.request_id)
     if stored is None:
         raise HTTPException(status_code=404, detail="request_id inconnu ou expiré")
+    if request.choice not in stored.candidates:
+        raise ValueError("Choix invalide — ne correspond pas aux options proposées")
 
     output = await call_llm(request.choice)
     await dispatch(output)
