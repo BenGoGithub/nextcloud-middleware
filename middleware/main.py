@@ -51,7 +51,8 @@ async def create_task_endpoint(request: TaskRequest) -> TaskResponse | Clarifica
     if output.confidence < CONFIDENCE_THRESHOLD:
         return ClarificationResponse(
             status="clarification_needed",
-            question=f"Je n'ai pas bien compris. Vouliez-vous créer une tâche intitulée « {output.title} » ?",
+            question="Je n'ai pas bien compris. Que vouliez-vous dire ?",
+            options=output.candidates,
             confidence=output.confidence,
         )
 
@@ -77,7 +78,8 @@ async def create_event_endpoint(request: TaskRequest) -> EventResponse | Clarifi
     if output.confidence < CONFIDENCE_THRESHOLD:
         return ClarificationResponse(
             status="clarification_needed",
-            question=f"Je n'ai pas bien compris. Vouliez-vous créer un événement intitulé « {output.title} » ?",
+            question="Je n'ai pas bien compris. Que vouliez-vous dire ?",
+            options=output.candidates,
             confidence=output.confidence,
         )
 

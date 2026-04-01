@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel
 
@@ -17,6 +17,7 @@ class TaskOutput(BaseModel):
     deck_stack: Optional[str] = None      # e.g. "Backlog"
     needs_calendar_event: bool = False
     confidence: float = 1.0
+    candidates: List[str] = []            # alternatives when confidence < 0.7
     notes: Optional[str] = None
 
 
@@ -28,6 +29,7 @@ class EventOutput(BaseModel):
     location: Optional[str] = None
     timezone: str = "Europe/Paris"
     confidence: float = 1.0
+    candidates: List[str] = []            # alternatives when confidence < 0.7
     notes: Optional[str] = None
 
 
@@ -57,4 +59,5 @@ class EventResponse(BaseModel):
 class ClarificationResponse(BaseModel):
     status: Literal["clarification_needed"]
     question: str
+    options: List[str]
     confidence: float

@@ -6,6 +6,10 @@ _CONFIDENCE_RULES = """
 - confidence: 1.0 if date/time is explicit and unambiguous.
 - confidence: 0.7-0.9 if date is relative but inferrable ("tomorrow", "vendredi").
 - confidence: < 0.7 if date or time is missing or highly ambiguous.
+- If confidence < 0.7, populate "candidates" with 2-3 human-readable alternative
+  interpretations (in the same language as the user input), e.g.:
+  ["Tâche : RDV médecin vendredi 4 avril", "Tâche : RDV médecin vendredi 11 avril"]
+  If only one interpretation is plausible, provide it alone.
 """
 
 
@@ -56,6 +60,7 @@ Extract the event information and return ONLY a JSON object matching this schema
   "location": string | null,
   "timezone": "Europe/Paris",
   "confidence": float,
+  "candidates": [string] | [],
   "notes": string | null
 }}
 
@@ -92,6 +97,7 @@ and return ONLY a JSON object that strictly matches the following schema:
   "deck_board": string | null,
   "deck_stack": string | null,
   "needs_calendar_event": boolean,
+  "candidates": [string] | [],
   "notes": string | null
 }}
 
