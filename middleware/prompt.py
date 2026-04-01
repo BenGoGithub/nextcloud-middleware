@@ -25,6 +25,24 @@ TASK_LISTS = [
 
 DECK_BOARDS = ["Aboriginal Way"]
 
+ACTIVE_CALENDARS = [
+    "Personnel",
+    "Aboriginal Way",
+    "Workout Rotator",
+    "Productivity",
+]
+
+_CALENDAR_RULES = f"""
+## Calendar routing rules (calendar field)
+Available calendars: {", ".join(ACTIVE_CALENDARS)}
+
+- personnel, perso, famille, loisir, voyage, admin, santé, médecin, rendez-vous → Personnel
+- aboriginal way, site, dev, PR, feature, publication, projet → Aboriginal Way
+- sport, entraînement, workout, séance, gym, fitness → Workout Rotator
+- productivity, workflow, MCP, Nextcloud, réunion projet → Productivity
+- If ambiguous, default to Personnel.
+"""
+
 ROUTING_RULES = """
 ## Task routing rules (nextcloud_list)
 - alternance, CDA, soutenance, stage, SNALE → Alternance
@@ -48,6 +66,7 @@ ROUTING_RULES = """
 
 def build_event_system_prompt() -> str:
     today = date.today().isoformat()
+    calendars_str = ", ".join(ACTIVE_CALENDARS)
     return f"""You are a calendar scheduling assistant. Today is {today} (timezone: Europe/Paris).
 
 The user describes a calendar event in natural language (French or English).
@@ -58,12 +77,15 @@ Extract the event information and return ONLY a JSON object matching this schema
   "start": "YYYY-MM-DDTHH:MM:SS",
   "end": "YYYY-MM-DDTHH:MM:SS" | null,
   "location": string | null,
+  "calendar": string | null,
   "timezone": "Europe/Paris",
   "confidence": float,
   "candidates": [string] | [],
   "notes": string | null
 }}
 
+Available calendars: {calendars_str}
+{_CALENDAR_RULES}
 Rules:
 - Resolve relative dates ("demain", "vendredi", "lundi prochain") using today's date ({today}).
 - If end time is not specified, set "end" to null (1 hour will be added automatically).
