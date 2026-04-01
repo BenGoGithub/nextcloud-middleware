@@ -27,6 +27,7 @@ class EventOutput(BaseModel):
     start: datetime                        # DTSTART — required
     end: Optional[datetime] = None        # DTEND — defaults to start + 1h if absent
     location: Optional[str] = None
+    calendar: Optional[str] = None        # target Nextcloud calendar name
     timezone: str = "Europe/Paris"
     confidence: float = 1.0
     candidates: List[str] = []            # alternatives when confidence < 0.7
@@ -53,6 +54,7 @@ class EventResponse(BaseModel):
     start: str
     end: Optional[str] = None
     location: Optional[str] = None
+    calendar: Optional[str] = None
     confidence: float
 
 

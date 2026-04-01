@@ -9,8 +9,11 @@ import caldav  # type: ignore[import]
 
 from middleware.config import settings
 from middleware.models import EventOutput
+from middleware.prompt import ACTIVE_CALENDARS
 
 logger = logging.getLogger(__name__)
+
+_FALLBACK_CALENDAR = "Personnel"
 
 
 def _fmt_local(dt: datetime, tz_name: str) -> str:
@@ -23,7 +26,8 @@ def _fmt_local(dt: datetime, tz_name: str) -> str:
     return dt.strftime("%Y%m%dT%H%M%S")
 
 
-async def create_event(output: EventOutput) -> None:
+async def create_event(output: EventOutput) -> str:
+    """Create a CalDAV VEVENT and return the name of the calendar used."""
     tz_name = output.timezone or "Europe/Paris"
 
     uid = str(uuid.uuid4())
@@ -60,13 +64,23 @@ async def create_event(output: EventOutput) -> None:
     )
     principal = client.principal()
 
-    # Use the first calendar that supports VEVENT (skips task-only collections)
-    target_cal = _find_vevent_calendar(principal)
+    target_name = output.calendar if output.calendar in ACTIVE_CALENDARS else _FALLBACK_CALENDAR
+    target_cal = _find_named_calendar(principal, target_name) or _find_vevent_calendar(principal)
     if target_cal is None:
         raise ValueError("No VEVENT-capable CalDAV calendar found")
 
     target_cal.add_event(ical)
-    logger.info("CalDAV VEVENT created: calendar=%s title=%r uid=%s", target_cal.name, output.title, uid)
+    calendar_used = target_cal.name or target_name
+    logger.info("CalDAV VEVENT created: calendar=%s title=%r uid=%s", calendar_used, output.title, uid)
+    return calendar_used
+
+
+def _find_named_calendar(principal: caldav.Principal, name: str) -> caldav.Calendar | None:
+    """Return the calendar matching name (case-insensitive), or None."""
+    for cal in principal.calendars():
+        if (cal.name or "").lower() == name.lower():
+            return cal
+    return None
 
 
 def _find_vevent_calendar(principal: caldav.Principal) -> caldav.Calendar | None:
