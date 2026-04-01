@@ -116,7 +116,7 @@ async def create_event_endpoint(request: TaskRequest) -> EventResponse | Clarifi
             confidence=output.confidence,
         )
 
-    await create_event(output)
+    calendar_used = await create_event(output)
 
     return EventResponse(
         status="created",
@@ -124,6 +124,7 @@ async def create_event_endpoint(request: TaskRequest) -> EventResponse | Clarifi
         start=output.start.isoformat(),
         end=output.end.isoformat() if output.end else None,
         location=output.location,
+        calendar=calendar_used,
         confidence=output.confidence,
     )
 
@@ -133,9 +134,11 @@ async def confirm_event_endpoint(request: ConfirmRequest) -> EventResponse:
     stored = pending_store.pop(request.request_id)
     if stored is None:
         raise HTTPException(status_code=404, detail="request_id inconnu ou expiré")
+    if request.choice not in stored.candidates:
+        raise ValueError("Choix invalide — ne correspond pas aux options proposées")
 
     output = await call_llm_event(request.choice)
-    await create_event(output)
+    calendar_used = await create_event(output)
 
     return EventResponse(
         status="created",
@@ -143,5 +146,6 @@ async def confirm_event_endpoint(request: ConfirmRequest) -> EventResponse:
         start=output.start.isoformat(),
         end=output.end.isoformat() if output.end else None,
         location=output.location,
+        calendar=calendar_used,
         confidence=output.confidence,
     )
