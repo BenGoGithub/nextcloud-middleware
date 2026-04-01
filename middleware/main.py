@@ -11,6 +11,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from middleware.adapters.events import create_event
 from middleware.config import settings
 from middleware.llm import call_llm, call_llm_event
+from middleware.prompt import ACTIVE_CALENDARS
 from middleware.models import (
     ClarificationResponse,
     ConfirmRequest,
@@ -116,6 +117,9 @@ async def create_event_endpoint(request: TaskRequest) -> EventResponse | Clarifi
             confidence=output.confidence,
         )
 
+    if output.calendar is not None and output.calendar not in ACTIVE_CALENDARS:
+        raise ValueError(f"Calendrier inconnu : {output.calendar}")
+
     calendar_used = await create_event(output)
 
     return EventResponse(
@@ -138,6 +142,9 @@ async def confirm_event_endpoint(request: ConfirmRequest) -> EventResponse:
         raise ValueError("Choix invalide — ne correspond pas aux options proposées")
 
     output = await call_llm_event(request.choice)
+    if output.calendar is not None and output.calendar not in ACTIVE_CALENDARS:
+        raise ValueError(f"Calendrier inconnu : {output.calendar}")
+
     calendar_used = await create_event(output)
 
     return EventResponse(
