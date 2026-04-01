@@ -58,6 +58,12 @@ class EventResponse(BaseModel):
 
 class ClarificationResponse(BaseModel):
     status: Literal["clarification_needed"]
+    request_id: str
     question: str
     options: List[str]
     confidence: float
+
+
+class ConfirmRequest(BaseModel):
+    request_id: str
+    choice: str
