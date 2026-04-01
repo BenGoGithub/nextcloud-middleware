@@ -33,3 +33,7 @@ jobs:
               exit 1
             fi
             echo "Deploy successful"
+
+      - name: Notify deploy failure
+        if: failure()
+        run: echo "::error::Deploy to production FAILED — check logs above."
