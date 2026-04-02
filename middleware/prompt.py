@@ -14,6 +14,7 @@ _CONFIDENCE_RULES = """
 
 
 TASK_LISTS = [
+    "Inbox",
     "Productivity",
     "Aboriginal Way",
     "Alternance",
