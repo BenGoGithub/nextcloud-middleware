@@ -42,11 +42,12 @@ async def create_task(output: TaskOutput) -> None:
     api = _get_api()
     api.load_remote_data()
 
-    list_uid = _find_list_uid(api, output.nextcloud_list or "")
+    list_name = output.nextcloud_list or settings.default_task_list
+    list_uid = _find_list_uid(api, list_name)
     if list_uid is None:
         available = [tl.name for tl in api.task_lists]
         raise ValueError(
-            f"Nextcloud list '{output.nextcloud_list}' not found. Available: {available}"
+            f"Nextcloud list '{list_name}' not found. Available: {available}"
         )
 
     task = TaskData(
@@ -56,7 +57,7 @@ async def create_task(output: TaskOutput) -> None:
         priority=output.priority or 0,
     )
     api.add_task(task, list_uid=list_uid)
-    logger.info("CalDAV task created: list=%s title=%r", output.nextcloud_list, output.title)
+    logger.info("CalDAV task created: list=%s title=%r", list_name, output.title)
 
     if output.needs_calendar_event and output.due_date:
         try:

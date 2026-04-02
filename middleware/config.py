@@ -23,5 +23,8 @@ class Settings(BaseSettings):
     nextcloud_username: str
     nextcloud_password: str
 
+    # Task routing
+    default_task_list: str = "Inbox"
+
 
 settings = Settings()  # type: ignore[call-arg]
