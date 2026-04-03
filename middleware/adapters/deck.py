@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import base64
 import logging
+from datetime import datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import httpx
 from cachetools import TTLCache
@@ -12,6 +14,16 @@ from middleware.models import TaskOutput
 from middleware.schemas import DeckCardCreateInput
 
 logger = logging.getLogger(__name__)
+
+_PARIS_TZ = ZoneInfo("Europe/Paris")
+
+
+def _to_paris_timestamp(dt: datetime) -> int:
+    """Return a UNIX timestamp for dt, localizing naive datetimes to Europe/Paris."""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=_PARIS_TZ)
+    return int(dt.timestamp())
+
 
 # TTL cache: boards/stacks loaded once per hour
 _board_cache: TTLCache[str, dict[str, Any]] = TTLCache(maxsize=64, ttl=3600)
@@ -107,7 +119,7 @@ async def create_card(output: TaskOutput) -> None:
 
         # Add due date via PUT (API limitation #4106)
         if output.due_date:
-            due_ts = int(output.due_date.timestamp())
+            due_ts = _to_paris_timestamp(output.due_date)
             update_resp = client.put(
                 f"{_base_url()}/boards/{board_id}/stacks/{stack_id}/cards/{card_id}",
                 json={**card_payload, "duedate": due_ts},
@@ -135,7 +147,7 @@ async def create_card_by_ids(input: DeckCardCreateInput) -> None:
         card_id = create_resp.json()["id"]
 
         if input.due_at:
-            due_ts = int(input.due_at.timestamp())
+            due_ts = _to_paris_timestamp(input.due_at)
             update_resp = client.put(
                 f"{_base_url()}/boards/{input.board_id}/stacks/{input.stack_id}/cards/{card_id}",
                 json={**card_payload, "duedate": due_ts},
