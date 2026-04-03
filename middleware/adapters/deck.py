@@ -2,15 +2,28 @@ from __future__ import annotations
 
 import base64
 import logging
+from datetime import datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import httpx
 from cachetools import TTLCache
 
 from middleware.config import settings
 from middleware.models import TaskOutput
+from middleware.schemas import DeckCardCreateInput
 
 logger = logging.getLogger(__name__)
+
+_PARIS_TZ = ZoneInfo("Europe/Paris")
+
+
+def _to_paris_timestamp(dt: datetime) -> int:
+    """Return a UNIX timestamp for dt, localizing naive datetimes to Europe/Paris."""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=_PARIS_TZ)
+    return int(dt.timestamp())
+
 
 # TTL cache: boards/stacks loaded once per hour
 _board_cache: TTLCache[str, dict[str, Any]] = TTLCache(maxsize=64, ttl=3600)
@@ -106,7 +119,7 @@ async def create_card(output: TaskOutput) -> None:
 
         # Add due date via PUT (API limitation #4106)
         if output.due_date:
-            due_ts = int(output.due_date.timestamp())
+            due_ts = _to_paris_timestamp(output.due_date)
             update_resp = client.put(
                 f"{_base_url()}/boards/{board_id}/stacks/{stack_id}/cards/{card_id}",
                 json={**card_payload, "duedate": due_ts},
@@ -114,3 +127,34 @@ async def create_card(output: TaskOutput) -> None:
             update_resp.raise_for_status()
 
         logger.info("Deck card created: board=%s stack=%s title=%r", board_name, stack_name, output.title)
+
+
+async def create_card_by_ids(input: DeckCardCreateInput) -> None:
+    """Create a Deck card using known board_id and stack_id directly (no name lookup)."""
+    headers = {**_HEADERS, **_auth_header()}
+
+    with httpx.Client(headers=headers) as client:
+        card_payload: dict[str, Any] = {
+            "title": input.title,
+            "description": input.description or "",
+            "order": 999,
+        }
+        create_resp = client.post(
+            f"{_base_url()}/boards/{input.board_id}/stacks/{input.stack_id}/cards",
+            json=card_payload,
+        )
+        create_resp.raise_for_status()
+        card_id = create_resp.json()["id"]
+
+        if input.due_at:
+            due_ts = _to_paris_timestamp(input.due_at)
+            update_resp = client.put(
+                f"{_base_url()}/boards/{input.board_id}/stacks/{input.stack_id}/cards/{card_id}",
+                json={**card_payload, "duedate": due_ts},
+            )
+            update_resp.raise_for_status()
+
+        logger.info(
+            "Deck card created by IDs: board_id=%s stack_id=%s title=%r",
+            input.board_id, input.stack_id, input.title,
+        )

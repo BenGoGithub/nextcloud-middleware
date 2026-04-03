@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import uuid
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 import caldav  # type: ignore[import]
 from caldav_tasks_api import TaskData, TasksAPI  # type: ignore[import]
@@ -11,6 +12,7 @@ from middleware.config import settings
 from middleware.models import TaskOutput
 
 _VEVENT_TZ = "Europe/Paris"
+_PARIS_TZ = ZoneInfo("Europe/Paris")
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +27,12 @@ def _get_api() -> TasksAPI:
 
 
 def _ical_due(dt: datetime) -> str:
-    """Format a datetime as an iCalendar DUE string."""
+    """Format a datetime as an iCalendar DUE string.
+
+    Naive datetimes are assumed to be in Europe/Paris and localized before formatting.
+    """
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=_PARIS_TZ)
     if dt.hour == 0 and dt.minute == 0 and dt.second == 0:
         return dt.strftime("%Y%m%d")
     return dt.strftime("%Y%m%dT%H%M%S")
