@@ -9,6 +9,7 @@ from cachetools import TTLCache
 
 from middleware.config import settings
 from middleware.models import TaskOutput
+from middleware.schemas import DeckCardCreateInput
 
 logger = logging.getLogger(__name__)
 
@@ -114,3 +115,34 @@ async def create_card(output: TaskOutput) -> None:
             update_resp.raise_for_status()
 
         logger.info("Deck card created: board=%s stack=%s title=%r", board_name, stack_name, output.title)
+
+
+async def create_card_by_ids(input: DeckCardCreateInput) -> None:
+    """Create a Deck card using known board_id and stack_id directly (no name lookup)."""
+    headers = {**_HEADERS, **_auth_header()}
+
+    with httpx.Client(headers=headers) as client:
+        card_payload: dict[str, Any] = {
+            "title": input.title,
+            "description": input.description or "",
+            "order": 999,
+        }
+        create_resp = client.post(
+            f"{_base_url()}/boards/{input.board_id}/stacks/{input.stack_id}/cards",
+            json=card_payload,
+        )
+        create_resp.raise_for_status()
+        card_id = create_resp.json()["id"]
+
+        if input.due_at:
+            due_ts = int(input.due_at.timestamp())
+            update_resp = client.put(
+                f"{_base_url()}/boards/{input.board_id}/stacks/{input.stack_id}/cards/{card_id}",
+                json={**card_payload, "duedate": due_ts},
+            )
+            update_resp.raise_for_status()
+
+        logger.info(
+            "Deck card created by IDs: board_id=%s stack_id=%s title=%r",
+            input.board_id, input.stack_id, input.title,
+        )

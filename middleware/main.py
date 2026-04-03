@@ -20,11 +20,13 @@ from middleware.models import (
     TaskResponse,
 )
 from middleware.router import dispatch
+from middleware.routers.tasks import router as tasks_router
 from middleware.store import pending_store
 
 logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(title="Nextcloud Middleware", version="0.1.0")
+app.include_router(tasks_router)
 
 CONFIDENCE_THRESHOLD = 0.7
 

@@ -6,6 +6,16 @@ from typing import List, Literal, Optional
 from pydantic import BaseModel, model_validator
 
 
+class DeckCardCreateInput(BaseModel):
+    """Typed input for direct Deck card creation with known board/stack IDs."""
+
+    board_id: int
+    stack_id: int
+    title: str
+    description: Optional[str] = None
+    due_at: Optional[datetime] = None
+
+
 class StructuredTaskInput(BaseModel):
     """Input schema for POST /task/structured.
 
